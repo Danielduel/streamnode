@@ -10,8 +10,13 @@ const tts = t.router({
   speak: t.procedure
     .input(z.object({
       message: z.string(),
+      id: z.string(),
     }))
     .query(async ({ input }) => {
+      const allowedIds = (Deno.env.get("ALLOWED_IDS")!)
+        .split(",")
+        .filter((x) => x);
+      if (!allowedIds.includes(input.id)) return null;
       const voiceId = "onwK4e9ZLuTAKqWW03F9";
       const modelId = "";
       const pronunciationDictionaryId = "";

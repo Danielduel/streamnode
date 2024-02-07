@@ -107,6 +107,10 @@ try {
       "channelName",
       "What is your channel name? (lowercase, without # prefix, f.e. mine is danielduel)",
     );
+    const id = localStorageOrPrompt(
+      "id",
+      "What is your id? (ask the author)",
+    );
     const chatClient = new ChatClient();
     chatClient.irc.addCapability({
       name: "twitch.tv/membership",
@@ -137,11 +141,13 @@ try {
     });
 
     let lastChatter = "";
+
     chatClient.onMessage(
       async (twitchChannelName, twitchUserName, messageText, messageData) => {
         if (messageText.length > 200) return;
         if (messageText.startsWith("!")) return;
         if (messageText.startsWith("@")) return;
+        if (twitchUserName === "streamelements") return;
 
         let message = `${twitchUserName}, ${messageText}`;
         if (lastChatter === twitchUserName) {
@@ -151,6 +157,7 @@ try {
 
         const response = await webappTrpc.tts.speak.query({
           message,
+          id,
         });
         if (response) {
           play(response);
