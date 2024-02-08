@@ -99,75 +99,86 @@ const localStorageOrPrompt = (key: string, promptText: string) => {
   return value;
 };
 
-try {
-  (async () => {
-    if (!("document" in globalThis)) return;
+const run = <T,>(x?: () => T) => x?.();
 
-    const channelName = localStorageOrPrompt(
-      "channelName",
-      "What is your channel name? (lowercase, without # prefix, f.e. mine is danielduel)",
-    );
-    const id = localStorageOrPrompt(
-      "id",
-      "What is your id? (ask the author)",
-    );
-    const chatClient = new ChatClient();
-    chatClient.irc.addCapability({
-      name: "twitch.tv/membership",
-    });
-    chatClient.irc.addCapability({
-      name: "twitch.tv/tags",
-    });
+const createPlayer = () => {
+  if (!("document" in globalThis)) return;
+  const channelName = localStorageOrPrompt(
+    "channelName",
+    "What is your channel name? (lowercase, without # prefix, f.e. mine is danielduel)",
+  );
+  const id = localStorageOrPrompt(
+    "id",
+    "What is your id? (ask the author)",
+  );
 
-    chatClient.onJoin((twitchChannelName, twitchUserName) => {
-      console.log("Hello");
-    });
-
-    chatClient.onPart((twitchChannelName, twitchUserName) => {
-    });
-
-    chatClient.onJoinFailure((twitchChannelName, twitchUserName) => {});
-
-    // chatClient.irc.onTypedMessage(
-    //   MessageTypes.Numerics.Reply353NamesReply,
-    //   (msg) => {
-    //     msg.names.value.split(" ").forEach((twitchUserName) => {
-    //     });
-    //   },
-    // );
-
-    chatClient.irc.onDisconnect(() => {
-      chatClient.reconnect();
-    });
-
-    let lastChatter = "";
-
-    chatClient.onMessage(
-      async (twitchChannelName, twitchUserName, messageText, messageData) => {
-        if (messageText.length > 200) return;
-        if (messageText.startsWith("!")) return;
-        if (messageText.startsWith("@")) return;
-        if (twitchUserName === "streamelements") return;
-
-        let message = `${twitchUserName}, ${messageText}`;
-        if (lastChatter === twitchUserName) {
-          message = messageText;
-        }
-        lastChatter = twitchUserName;
-
-        const response = await webappTrpc.tts.speak.query({
-          message,
-          id,
+  return () =>
+    new Promise((resolve, reject) => {
+      try {
+        const chatClient = new ChatClient();
+        chatClient.irc.addCapability({
+          name: "twitch.tv/membership",
         });
-        if (response) {
-          play(response);
-        }
-      },
-    );
+        chatClient.irc.addCapability({
+          name: "twitch.tv/tags",
+        });
+        chatClient.onJoin((twitchChannelName, twitchUserName) => {});
+        chatClient.onPart((twitchChannelName, twitchUserName) => {});
+        chatClient.onJoinFailure((twitchChannelName, twitchUserName) => {});
+        // chatClient.irc.onTypedMessage(
+        //   MessageTypes.Numerics.Reply353NamesReply,
+        //   (msg) => {
+        //     msg.names.value.split(" ").forEach((twitchUserName) => {
+        //     });
+        //   },
+        // );
+        chatClient.irc.onDisconnect(() => {});
+        let lastChatter = "";
+        chatClient.onMessage(
+          async (
+            twitchChannelName,
+            twitchUserName,
+            messageText,
+            messageData,
+          ) => {
+            if (messageText.length > 200) return;
+            if (messageText.startsWith("!")) return;
+            if (messageText.startsWith("@")) return;
+            if (twitchUserName === "streamelements") return;
 
-    await chatClient.connect();
-    await chatClient.join(channelName);
+            let message = `${twitchUserName}, ${messageText}`;
+            if (lastChatter === twitchUserName) {
+              message = messageText;
+            }
+            lastChatter = twitchUserName;
+
+            const response = await webappTrpc.tts.speak.query({
+              message,
+              id,
+            });
+            if (response) {
+              play(response);
+            }
+          },
+        );
+        chatClient.connect().then(() => {
+          chatClient.join(channelName);
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+};
+
+if ("document" in globalThis) {
+  (async () => {
+    const _createPlayer = createPlayer();
+    while (_createPlayer) {
+      try {
+        await run(_createPlayer);
+      } catch (err) {
+        console.error(err);
+      }
+    }
   })();
-} catch (err) {
-  console.error(err);
 }
