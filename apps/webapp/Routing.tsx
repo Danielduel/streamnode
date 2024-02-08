@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+// @deno-types="npm:@twurple/chat"
 import { ChatClient } from "@twurple/chat";
 import { webappTrpc } from "@/packages/trpc/trpc-webapp.ts";
 import { useEffect } from "react";
@@ -161,11 +162,12 @@ const createPlayer = () => {
             }
           },
         );
-        chatClient.connect().then(() => {
-          chatClient.join(channelName);
-        });
+        chatClient.connect();
+        chatClient.join(channelName);
       } catch (err) {
-        reject(err);
+        setTimeout(() => {
+          reject(err);
+        }, 3000);
       }
     });
 };
