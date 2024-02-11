@@ -17,6 +17,9 @@ if ("Audio" in globalThis) {
     .then(console.log)
     .catch(() => {
       playBusy = true;
+      console.error(
+        "Allow audio for this website, see the browser's address bar",
+      );
       alert("Allow audio for this website, see the browser's address bar");
       location.reload();
     });
@@ -26,8 +29,10 @@ const playQueue: string[] = [];
 const play = async (src: string) => {
   playQueue.push(src);
   if (playBusy) {
+    console.log("Playbusy is true, return");
     return;
   }
+  console.log("Playbusy = true");
   playBusy = true;
 
   const audioElement: HTMLAudioElement = document.getElementById(
@@ -37,8 +42,14 @@ const play = async (src: string) => {
   const playP = (src: string) =>
     new Promise((r) => {
       try {
+        console.log("Playing!");
         audioElement.src = src;
-        audioElement.onended = r;
+        audioElement.onended = () => {
+          console.log("Ended!");
+          audioElement.pause();
+          audioElement.currentTime = 0;
+          return r(null);
+        };
         audioElement.onerror = console.log;
         audioElement.play();
       } catch (error) {
@@ -53,6 +64,7 @@ const play = async (src: string) => {
   }
 
   playBusy = false;
+  console.log("Playbusy = false");
 };
 
 if (("document" in globalThis)) {
@@ -68,7 +80,12 @@ const Page = () => {
   });
   return (
     <div>
-      <audio className="w-screen" controls id="audioplayer" autoPlay />
+      <audio
+        className="w-screen"
+        controls
+        id="audioplayer"
+        autoPlay
+      />
       Hello
       <button
         className="ring p-3 m-2 cursor-pointer"
