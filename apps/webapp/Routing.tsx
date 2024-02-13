@@ -44,12 +44,6 @@ const play = async (src: string) => {
       try {
         console.log("Playing!");
         audioElement.src = src;
-        audioElement.onended = () => {
-          console.log("Ended!");
-          audioElement.pause();
-          audioElement.currentTime = 0;
-          return r(null);
-        };
         audioElement.onerror = console.log;
         audioElement.play();
       } catch (error) {
@@ -66,13 +60,6 @@ const play = async (src: string) => {
   playBusy = false;
   console.log("Playbusy = false");
 };
-
-if (("document" in globalThis)) {
-  setInterval(() => {
-    console.log("Playing a sec");
-    play(secondOfSilence);
-  }, 10000);
-}
 
 const Page = () => {
   useEffect(() => {
